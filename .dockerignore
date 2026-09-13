@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+sapa-frontend/node_modules
+sapa-frontend/dist
+sapa-laravel/vendor
+sapa-laravel/storage/framework/cache/data/*
+sapa-laravel/storage/framework/sessions/*
+sapa-laravel/storage/framework/views/*
+sapa-laravel/storage/logs/*.log
+*.md
+deploy.sh
