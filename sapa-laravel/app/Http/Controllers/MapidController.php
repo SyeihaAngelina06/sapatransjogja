@@ -114,6 +114,8 @@ class MapidController extends Controller
                 ])->post(
                     'https://server.mapid.io/web/competition/activities',
                     [
+                        // Tambahkan limit besar agar data tidak terpotong
+                        'limit' => 2000, 
                         'feature' => [
                             'type' => 'Polygon',
                             'coordinates' => [[

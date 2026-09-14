@@ -5,6 +5,7 @@
     <title>MAPID Map</title>
 
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.0.0/dist/maplibre-gl.css">
+    <link rel="preload" href="https://unpkg.com/maplibre-gl@6.0.0/dist/maplibre-gl.mjs" as="script" crossorigin>
 
     <style>
         html,
