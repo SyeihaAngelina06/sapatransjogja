@@ -308,22 +308,22 @@ export default function Home({ onPreference, onChat, onOpenMap }) {
                         </h2>
                     </section>
 
-                    {/* SEARCH INPUT SECTION */}
-                    <div className="mt-4 w-full">
-                        <div className="h-[48px] w-full md:max-w-[600px] flex items-center gap-3 rounded-[12px] border border-[#EAEAEA] bg-white px-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="shrink-0">
-                                <path d="M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z" stroke="#9B9B9B" strokeWidth="1.5" />
-                                <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 5.02944 7.02944 1 12 1C16.9706 1 21 5.02944 21 10Z" stroke="#9B9B9B" strokeWidth="1.5" />
-                            </svg>
-                            <input
-                                type="text"
-                                placeholder="Jalan Malioboro"
-                                value={destination}
-                                onChange={handleSearchChange}
-                                className="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] font-normal text-[#333333] placeholder:text-[#9B9B9B] font-['Inter']"
-                            />
-                        </div>
-                    </div>
+                   {/* SEARCH INPUT SECTION */}
+<div className="mt-4 w-full">
+    <div className="h-[48px] w-full flex items-center gap-3 rounded-[12px] border border-[#EAEAEA] bg-white px-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="shrink-0">
+            <path d="M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z" stroke="#9B9B9B" strokeWidth="1.5" />
+            <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 5.02944 7.02944 1 12 1C16.9706 1 21 5.02944 21 10Z" stroke="#9B9B9B" strokeWidth="1.5" />
+        </svg>
+        <input
+            type="text"
+            placeholder="Jalan Malioboro"
+            value={destination}
+            onChange={handleSearchChange}
+            className="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] font-normal text-[#333333] placeholder:text-[#9B9B9B] font-['Inter']"
+        />
+    </div>
+</div>
 
                     {/* BANNER CARDS CONTAINER */}
                     <div className="mt-6 flex flex-col gap-5 md:flex-row md:items-stretch">

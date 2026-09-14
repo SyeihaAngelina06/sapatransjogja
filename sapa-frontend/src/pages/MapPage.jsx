@@ -22,6 +22,23 @@ const getAksesibilitasColor = (kelas) => {
     }
 };
 
+// Tambahkan ini sebelum komponen "export default function MapPage"
+const parseFoto = (fotoData) => {
+    if (!fotoData) return [];
+    if (Array.isArray(fotoData)) return fotoData;
+    if (typeof fotoData === 'string') {
+        try {
+            // Jika datanya disimpan sebagai JSON string di DB: '["url1", "url2"]'
+            const parsed = JSON.parse(fotoData);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (e) {
+            // Jika datanya dipisah koma di DB: 'url1, url2'
+            return fotoData.split(',').map(url => url.trim());
+        }
+    }
+    return [fotoData];
+};
+
 const filterOptions = [
     {
         id: "sangat",
@@ -233,15 +250,16 @@ export default function MapPage({ onBack, mapAction }) {
                     lat: latitude,
                     long: longitude,
                 });
-
-                mapIframeRef.current?.contentWindow?.postMessage(
-                    {
-                        type: "USER_LOCATION",
-                        lat: latitude,
-                        long: longitude,
-                    },
-                    "*"
-                );
+                if (!mapAction?.center) {
+                    mapIframeRef.current?.contentWindow?.postMessage(
+                        {
+                            type: "USER_LOCATION",
+                            lat: latitude,
+                            long: longitude,
+                        },
+                        "*"
+                    );
+                }
             },
             (error) => {
                 console.error("GAGAL MENDAPATKAN LOKASI:", error);
@@ -292,7 +310,16 @@ export default function MapPage({ onBack, mapAction }) {
             .then((response) => response.json())
             .then((result) => {
                 console.log("DATA HALTE DATABASE:", result);
-                setHaltes(result.data || []);
+                
+                // --- BAGIAN YANG DIUBAH ---
+                // Kita format fotonya dulu agar menjadi Array yang benar
+                const processedData = (result.data || []).map(halte => ({
+                    ...halte,
+                    fotoArray: parseFoto(halte.foto || halte.foto_url || halte.image)
+                }));
+                
+                setHaltes(processedData);
+                // --------------------------
             })
             .catch((error) => {
                 console.error("GAGAL MENGAMBIL DATA HALTE:", error);
@@ -543,37 +570,42 @@ export default function MapPage({ onBack, mapAction }) {
 
                 <main className="relative h-[calc(100vh-150px-76px)] w-full overflow-hidden">
                     <iframe
-                        ref={mapIframeRef}
-                        src={
-                            mapAction?.center
-                                ? `/map?lat=${mapAction.center[1]}&long=${mapAction.center[0]}&zoom=${mapAction.zoom || 18}`
-                                : userLocation
-                                    ? `/map?lat=${userLocation.lat}&long=${userLocation.long}&zoom=14`
-                                    : "/map"
-                        }
-                        onLoad={() => {
-                            mapIframeRef.current?.contentWindow?.postMessage(
-                                {
-                                    type: "FILTER_ACCESSIBILITY",
-                                    filters: selectedFilters,
-                                },
-                                "*"
-                            );
+        ref={mapIframeRef}
+        src={
+            // 1. PRIORITAS UTAMA: Jika ada data pencarian dari Home, pakai ini!
+            mapAction?.center
+                ? `/map?lat=${mapAction.center[1]}&long=${mapAction.center[0]}&zoom=${mapAction.zoom || 18}`
+                // 2. KEDUA: Jika tidak ada pencarian, baru pakai lokasi GPS user
+                : userLocation
+                    ? `/map?lat=${userLocation.lat}&long=${userLocation.long}&zoom=14`
+                    : "/map"
+        }
+        onLoad={() => {
+            // Kirim filter aksesibilitas seperti biasa
+            mapIframeRef.current?.contentWindow?.postMessage(
+                {
+                    type: "FILTER_ACCESSIBILITY",
+                    filters: selectedFilters,
+                },
+                "*"
+            );
 
-                            if (userLocation) {
-                                mapIframeRef.current?.contentWindow?.postMessage(
-                                    {
-                                        type: "USER_LOCATION",
-                                        lat: userLocation.lat,
-                                        long: userLocation.long,
-                                    },
-                                    "*"
-                                );
-                            }
-                        }}
-                        className="h-full w-full border-0"
-                        title="Accessibility Map"
-                    />
+            // 🔥 PERBAIKAN UTAMA DI SINI:
+            // Jangan kirim USER_LOCATION jika user sedang membuka peta dari hasil pencarian (mapAction)
+            if (userLocation && !mapAction?.center) {
+                mapIframeRef.current?.contentWindow?.postMessage(
+                    {
+                        type: "USER_LOCATION",
+                        lat: userLocation.lat,
+                        long: userLocation.long,
+                    },
+                    "*"
+                );
+            }
+        }}
+        className="h-full w-full border-0"
+        title="Accessibility Map"
+    />
 
                     <div className="absolute bottom-0 left-0 z-10 w-full overflow-x-auto px-4 pb-4">
                         <div className="flex w-max gap-4">
@@ -634,27 +666,29 @@ export default function MapPage({ onBack, mapAction }) {
                                     </div>
 
                                     {/* RATING + THUMBNAIL */}
-                                    <div className="flex w-[58px] flex-shrink-0 flex-col items-end">
-                                        <span className="font-['Nunito'] text-[12px] font-semibold leading-[12px] text-[#A69F9F]">
-                                            {halte.rating}
-                                        </span>
+<div className="flex w-[58px] flex-shrink-0 flex-col items-end">
+    <span className="font-['Nunito'] text-[12px] font-semibold leading-[12px] text-[#A69F9F]">
+        {halte.rating}
+    </span>
 
-                                        <div className="mt-[15px] h-[51px] w-[58px] overflow-hidden rounded-[6px] bg-[#D0D5DD]">
-                                            {halte.foto?.length > 1 ? (
-                                                <img
-                                                    src={halte.foto[1]}
-                                                    alt={`Foto ${halte.nama}`}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            ) : halte.foto?.length > 0 ? (
-                                                <img
-                                                    src={halte.foto[0]}
-                                                    alt={`Foto ${halte.nama}`}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            ) : null}
-                                        </div>
-                                    </div>
+    <div className="mt-[15px] h-[51px] w-[58px] overflow-hidden rounded-[6px] bg-[#D0D5DD]">
+        {halte.fotoArray?.length > 1 ? (
+            // JIKA ADA LEBIH DARI 1 FOTO, AMBIL FOTO KEDUA (Index 1)
+            <img
+                src={halte.fotoArray[1]}
+                alt={`Foto ${halte.nama}`}
+                className="h-full w-full object-cover"
+            />
+        ) : halte.fotoArray?.length > 0 ? (
+            // JIKA HANYA ADA 1 FOTO, AMBIL FOTO PERTAMA (Index 0)
+            <img
+                src={halte.fotoArray[0]}
+                alt={`Foto ${halte.nama}`}
+                className="h-full w-full object-cover"
+            />
+        ) : null}
+    </div>
+</div>
                                 </button>
                             ))}
                         </div>
@@ -887,32 +921,34 @@ export default function MapPage({ onBack, mapAction }) {
                                 <div className="h-5" />
 
                                 {/* CARD FOTO */}
-                                <div className="rounded-[10px] bg-white p-4">
+<div className="rounded-[10px] bg-white p-4">
+    <h3 className="mt-1 font-['Nunito'] text-[16px] font-medium text-[#292D32]">
+        Foto Halte
+    </h3>
 
-                                    <h3 className="mt-1 font-['Nunito'] text-[16px] font-medium text-[#292D32]">
-                                        Foto Halte
-                                    </h3>
-
-                                    <div className="mt-3 flex gap-[18px] overflow-x-auto">
-                                        {selectedHalte.foto?.map((foto, index) => (
-                                            <button
-                                                key={index}
-                                                type="button"
-                                                onClick={() => {
-                                                    console.log("FOTO DIKLIK:", foto);
-                                                    setSelectedFoto(foto);
-                                                }}
-                                                className="h-[95px] w-[95px] flex-shrink-0 cursor-pointer overflow-hidden rounded-[10px] bg-[#F7F7F7] p-0"
-                                            >
-                                                <img
-                                                    src={foto}
-                                                    alt={`Foto ${selectedHalte.nama} ${index + 1}`}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
+    <div className="mt-3 flex gap-[18px] overflow-x-auto">
+        {selectedHalte.fotoArray?.length > 0 ? (
+            selectedHalte.fotoArray.map((foto, index) => (
+                <button
+                    key={index}
+                    type="button"
+                    onClick={() => {
+                        setSelectedFoto(foto);
+                    }}
+                    className="h-[95px] w-[95px] flex-shrink-0 cursor-pointer overflow-hidden rounded-[10px] bg-[#F7F7F7] p-0"
+                >
+                    <img
+                        src={foto}
+                        alt={`Foto ${selectedHalte.nama} ${index + 1}`}
+                        className="h-full w-full object-cover"
+                    />
+                </button>
+            ))
+        ) : (
+            <span className="text-[12px] text-gray-400">Tidak ada foto tersedia</span>
+        )}
+    </div>
+</div>
 
                                 {/*Button Petunjuk Rute*/}
                                 <button
